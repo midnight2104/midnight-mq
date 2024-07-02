@@ -13,4 +13,5 @@ public class MqMessage<T> {
     private Long id;
     private T body;
     private Map<String, String> headers;
+
 }
