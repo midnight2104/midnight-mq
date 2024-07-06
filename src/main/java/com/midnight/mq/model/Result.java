@@ -18,11 +18,8 @@ public class Result<T> {
         return new Result<>(1, msg);
     }
 
-    public static Result<MQMessage<?>> msg(String msg) {
-        return new Result<>(1, MQMessage.create(msg, null));
-    }
 
-    public static Result<MQMessage<?>> msg(MQMessage<?> msg) {
+    public static Result<MqMessage<?>> msg(MqMessage<?> msg) {
         return new Result<>(1, msg);
     }
 }

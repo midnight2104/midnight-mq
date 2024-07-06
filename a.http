@@ -1,0 +1,16 @@
+### sub
+GET http://localhost:8765/mq/sub?t=com.midnight.mq&cid=CID0
+
+### send
+POST http://localhost:8765/mq/send?t=com.midnight.mq&cid=CID0
+Content-Type: application/json
+
+{
+  "body" : "{\"id\":1,\"item\":\"item1\",\"price\":1.0}"
+}
+
+### recv
+GET http://localhost:8765/mq/recv?t=com.midnight.mq&cid=CID0
+
+### ack
+GET http://localhost:8765/mq/ack?t=com.midnight.mq&cid=CID0&offset=7

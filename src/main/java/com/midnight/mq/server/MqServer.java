@@ -1,28 +1,28 @@
 package com.midnight.mq.server;
 
-import com.midnight.mq.model.MQMessage;
+import com.midnight.mq.model.MqMessage;
 import com.midnight.mq.model.Result;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+
+@RestController
 @RequestMapping("/mq")
-public class MQServer {
+public class MqServer {
 
 
     // send
     @RequestMapping("/send")
     public Result<String> send(@RequestParam("t") String topic,
-                               @RequestParam("cid") String consumerId,
-                               @RequestBody MQMessage<String> message) {
-        return Result.ok(""+MessageQueue.send(topic, consumerId, message));
+                               @RequestBody MqMessage<String> message) {
+        return Result.ok("" + MessageQueue.send(topic, message));
     }
 
     // recv
     @RequestMapping("/recv")
-    public Result<MQMessage<?>> recv(@RequestParam("t") String topic,
+    public Result<MqMessage<?>> recv(@RequestParam("t") String topic,
                                      @RequestParam("cid") String consumerId) {
         return Result.msg(MessageQueue.recv(topic, consumerId));
     }
@@ -32,7 +32,7 @@ public class MQServer {
     public Result<String> ack(@RequestParam("t") String topic,
                               @RequestParam("cid") String consumerId,
                               @RequestParam("offset") Integer offset) {
-        return Result.ok(""+MessageQueue.ack(topic, consumerId, offset));
+        return Result.ok("" + MessageQueue.ack(topic, consumerId, offset));
     }
 
     // 1.sub
