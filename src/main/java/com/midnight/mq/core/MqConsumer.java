@@ -31,10 +31,6 @@ public class MqConsumer<T> {
     }
 
 
-    public boolean ack(String topic, int offset) {
-        return broker.ack(topic, id, offset);
-    }
-
     public boolean ack(String topic, MqMessage<?> message) {
         int offset = Integer.parseInt(message.getHeaders().get("X-offset"));
         return ack(topic, offset);
@@ -43,5 +39,9 @@ public class MqConsumer<T> {
     public void listen(String topic, MqListener<T> listener) {
         this.listener = listener;
         broker.addConsumer(topic, this);
+    }
+
+    private boolean ack(String topic, int offset) {
+        return broker.ack(topic, id, offset);
     }
 }

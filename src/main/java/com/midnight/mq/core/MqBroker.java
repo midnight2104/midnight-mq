@@ -42,7 +42,7 @@ public class MqBroker {
                     }
                 });
             });
-        }, 10000, 10000);
+        }, 100, 100);
     }
 
     public MqProducer createProducer() {
