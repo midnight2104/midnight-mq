@@ -2,10 +2,14 @@ package com.midnight.mq.server;
 
 import com.midnight.mq.model.MqMessage;
 import com.midnight.mq.model.Result;
+import com.midnight.mq.model.Stat;
+import com.midnight.mq.model.Subscription;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 
 @RestController
@@ -39,7 +43,7 @@ public class MqServer {
     @RequestMapping("/sub")
     public Result<String> subscribe(@RequestParam("t") String topic,
                                     @RequestParam("cid") String consumerId) {
-        MessageQueue.sub(new MessageSubscription(topic, consumerId, -1));
+        MessageQueue.sub(new Subscription(topic, consumerId, -1));
         return Result.ok();
     }
 
@@ -47,7 +51,20 @@ public class MqServer {
     @RequestMapping("/unsub")
     public Result<String> unsubscribe(@RequestParam("t") String topic,
                                       @RequestParam("cid") String consumerId) {
-        MessageQueue.unsub(new MessageSubscription(topic, consumerId, -1));
+        MessageQueue.unsub(new Subscription(topic, consumerId, -1));
         return Result.ok();
+    }
+
+    @RequestMapping("/stat")
+    public Result<Stat> stat(@RequestParam("t") String topic,
+                             @RequestParam("cid") String consumerId) {
+        return Result.stat(MessageQueue.stat(topic, consumerId));
+    }
+
+    @RequestMapping("/batch")
+    public Result<List<MqMessage<?>>> batch(@RequestParam("t") String topic,
+                                          @RequestParam("cid") String consumerId,
+                                          @RequestParam(name = "size", required = false, defaultValue = "1000") int size) {
+        return Result.msg(MessageQueue.batch(topic, consumerId, size));
     }
 }

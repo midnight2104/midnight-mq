@@ -1,8 +1,15 @@
 package com.midnight.mq.server;
 
 import com.midnight.mq.model.MqMessage;
+import com.midnight.mq.model.Stat;
+import com.midnight.mq.model.Subscription;
+import com.midnight.mq.store.Indexer;
+import com.midnight.mq.store.Store;
+import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MessageQueue {
@@ -15,22 +22,57 @@ public class MessageQueue {
     }
 
     private String topic;
-    private int index = 0;
-    private MqMessage<?>[] queue = new MqMessage[1024 * 10];
-    private Map<String, MessageSubscription> subscriptions = new HashMap<>();
+    private Map<String, Subscription> subscriptions = new HashMap<>();
+
+    @Getter
+    private Store store;
 
     public MessageQueue(String topic) {
         this.topic = topic;
+        this.store = new Store(topic);
+        store.init();
     }
 
-    public static void sub(MessageSubscription subscription) {
+    public static List<MqMessage<?>> batch(String topic, String consumerId, int size) {
+        MessageQueue messageQueue = queues.get(topic);
+        if (messageQueue == null) throw new RuntimeException("topic not found");
+
+        if (messageQueue.subscriptions.containsKey(consumerId)) {
+            int offset = messageQueue.subscriptions.get(consumerId).getOffset();
+            int nextOffset = 0;
+
+            if (offset > -1) {
+                Indexer.Entry entry = Indexer.getEntry(topic, offset);
+                nextOffset = offset + entry.getLength();
+            }
+
+            List<MqMessage<?>> result = new ArrayList<>();
+            MqMessage<?> recv = messageQueue.recv(nextOffset);
+            while (recv != null) {
+                result.add(recv);
+                if (result.size() >= size) break;
+                recv = messageQueue.recv(++offset);
+            }
+        }
+
+        throw new RuntimeException("subscriptions not found for topic/consumerId = "
+                + topic + "/" + consumerId);
+    }
+
+    public static Stat stat(String topic, String consumerId) {
+        MessageQueue queue = queues.get(topic);
+        Subscription subscription = queue.subscriptions.get(consumerId);
+        return new Stat(subscription, queue.getStore().total(), queue.getStore().pos());
+    }
+
+    public static void sub(Subscription subscription) {
         MessageQueue messageQueue = queues.get(subscription.getTopic());
         if (messageQueue == null) throw new RuntimeException("topic not found");
         messageQueue.subscribe(subscription);
     }
 
 
-    public static void unsub(MessageSubscription subscription) {
+    public static void unsub(Subscription subscription) {
         MessageQueue messageQueue = queues.get(subscription.getTopic());
         if (messageQueue == null) return;
         messageQueue.unsubscribe(subscription);
@@ -48,8 +90,14 @@ public class MessageQueue {
         if (messageQueue == null) throw new RuntimeException("topic not found");
 
         if (messageQueue.subscriptions.containsKey(consumerId)) {
-            int ind = messageQueue.subscriptions.get(consumerId).getOffset();
-            return messageQueue.recv(ind + 1);
+            int offset = messageQueue.subscriptions.get(consumerId).getOffset();
+            int nextOffset = 0;
+            if (offset > -1) {
+                Indexer.Entry entry = Indexer.getEntry(topic, offset);
+                nextOffset = offset + entry.getLength();
+            }
+
+            return messageQueue.recv(nextOffset);
         }
 
         throw new RuntimeException("subscriptions not found for topic/consumerId = "
@@ -70,9 +118,9 @@ public class MessageQueue {
         MessageQueue messageQueue = queues.get(topic);
         if (messageQueue == null) throw new RuntimeException("topic not found");
         if (messageQueue.subscriptions.containsKey(consumerId)) {
-            MessageSubscription subscription = messageQueue.subscriptions.get(consumerId);
+            Subscription subscription = messageQueue.subscriptions.get(consumerId);
             // 只能往前消费
-            if (offset > subscription.getOffset() && offset < messageQueue.index) {
+            if (offset > subscription.getOffset() && offset < Store.LEN) {
                 subscription.setOffset(offset);
                 return offset;
             }
@@ -84,28 +132,24 @@ public class MessageQueue {
     }
 
 
-    private MqMessage<?> recv(int ind) {
-        if (ind < index) {
-            return queue[ind];
-        }
-        return null;
+    private MqMessage<?> recv(int offset) {
+        return store.read(offset);
     }
 
     private int send(MqMessage<String> message) {
-        if (index > queue.length) {
-            return -1;
-        }
-        message.getHeaders().put("X-offset", String.valueOf(index));
-        queue[index++] = message;
-        return index;
+        int offset = store.pos();
+        message.getHeaders().put("X-offset", String.valueOf(offset));
+
+        store.write(message);
+        return offset;
     }
 
-    private void unsubscribe(MessageSubscription subscription) {
+    private void unsubscribe(Subscription subscription) {
         String consumerId = subscription.getConsumerId();
         subscriptions.remove(consumerId);
     }
 
-    private void subscribe(MessageSubscription subscription) {
+    private void subscribe(Subscription subscription) {
         String consumerId = subscription.getConsumerId();
         subscriptions.putIfAbsent(consumerId, subscription);
     }
