@@ -22,7 +22,7 @@ public class MqBroker {
     public static String brokerUrl = "http://localhost:8765/mq";
 
     static {
-        init();
+      //  init();
     }
 
     public static void init() {

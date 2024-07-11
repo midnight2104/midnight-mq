@@ -29,7 +29,7 @@ public interface HttpUtils {
         if(((OkHttpInvoker)Default).isInitialized()) {
             return Default;
         }
-        int timeout = Integer.parseInt(System.getProperty("utils.http.timeout", "100000"));
+        int timeout = Integer.parseInt(System.getProperty("utils.http.timeout", "10000000"));
         int maxIdleConnections = Integer.parseInt(System.getProperty("utils.http.maxconn", "128"));
         int keepAliveDuration = Integer.parseInt(System.getProperty("utils.http.keepalive", "300"));
         ((OkHttpInvoker)Default).init(timeout, maxIdleConnections, keepAliveDuration);

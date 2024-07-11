@@ -25,10 +25,10 @@ public class MqDemo {
         MqBroker broker = MqBroker.getDefault();
 
         MqProducer producer = broker.createProducer();
-        MqConsumer<?> consumer = broker.createConsumer(topic);
-        consumer.listen(topic, message -> {
-            System.out.println(" onMessage => " + message); // 这里处理消息
-        });
+//        MqConsumer<?> consumer = broker.createConsumer(topic);
+//        consumer.listen(topic, message -> {
+//            System.out.println(" onMessage => " + message); // 这里处理消息
+//        });
 
         MqConsumer<?> consumer1 = broker.createConsumer(topic);
 
